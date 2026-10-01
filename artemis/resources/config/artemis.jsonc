@@ -21,6 +21,12 @@
   // 2. Ready-to-Use Presets (Switch easily in code or CLI)
   // ------------------------------------------------------------------------------
   "presets": {
+    "codex": {
+      "provider": "codex",
+      "model": "default",
+      "reasoning_effort": "medium",
+      "fallback": { "provider": "codex", "model": "default", "reasoning_effort": "low" }
+    },
     "gemini-flagship": {
       "provider": "google",
       "model": "gemini-3.8-flash",

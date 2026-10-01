@@ -258,7 +258,7 @@ class _ProviderRetryTelemetryHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         try:
             request = _ACTIVE_LLM_REQUEST.get()
-            if not request or request.get("provider") != ModelProvider.GOOGLE.value:
+            if not request or request.get("provider") != ModelProvider.GOOGLE:
                 return
 
             message = record.getMessage()

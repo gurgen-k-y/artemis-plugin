@@ -926,7 +926,8 @@ def test_cli_doctor_json_shape_and_ready_verdict(monkeypatch):
         assert set(check) == {"id", "title", "status", "required", "summary", "detail", "fix"}
         assert check["status"] == "pass"
         assert check["fix"] == []
-    assert set(doc["extras"]) == {"nodejs_npm", "showcase_ui"}
+    assert set(doc["extras"]) == {"codex_client", "nodejs_npm", "showcase_ui"}
+    assert doc["extras"]["codex_client"]["status"] in {"pass", "missing"}
     assert doc["extras"]["nodejs_npm"]["status"] == "pass"
     assert doc["extras"]["showcase_ui"]["status"] == "missing"
 

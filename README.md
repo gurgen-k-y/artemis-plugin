@@ -104,6 +104,20 @@ cd artemis
 
 > **Tip**: Opens `http://localhost:8000` in your default browser with a device connection wizard, live screen mirroring, prompt sandbox, and execution replays. You can also run directly from CLI: `uv run artemis run "Open Settings, find Battery and tell me current level" --profile flash`.
 
+### Signed-in Codex provider
+
+Artemis can use an existing Codex CLI login without copying or storing its credentials:
+
+```bash
+codex login
+# Headless alternative (if enabled by your workspace administrator):
+codex login --device-auth
+uv run artemis init
+uv run artemis doctor
+```
+
+Never share a device code. Select `codex` in `config/artemis.jsonc` to use the local client. API-key providers remain available. Provider packages can register additional backends through the `artemis.llm_providers` Python entry-point group.
+
 <a id="mcp-setup"></a>
 <a id="mcp"></a>
 <details>

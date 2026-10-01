@@ -118,9 +118,7 @@ DEFAULT_EXPLORER_VERSION: Literal["flash", "pro", "ultra"] = "flash"
 # Literals and Type Aliases
 # ==============================================================================
 
-LLMProvider = Literal[
-    "openai", "google", "openrouter", "xai", "vertexai", "anthropic", "ollama", "vllm", "custom"
-]
+type LLMProvider = str
 ExplorerVersion = Literal["flash", "pro", "ultra"]
 
 LLMUtilsNode = Literal[

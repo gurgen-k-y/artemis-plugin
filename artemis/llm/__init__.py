@@ -18,8 +18,12 @@ from artemis.llm.router import (
     ModelEndpoint,
     ModelProvider,
 )
+from artemis.llm.registry import ProviderAdapter, ProviderRegistry, provider_registry
 
 __all__ = [
     "ModelEndpoint",
     "ModelProvider",
+    "ProviderAdapter",
+    "ProviderRegistry",
+    "provider_registry",
 ]

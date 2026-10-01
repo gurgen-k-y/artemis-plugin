@@ -19,7 +19,6 @@
 """LLM provider models, the base LLM configuration model and its loaders."""
 
 from collections.abc import Callable
-import os
 from pathlib import Path
 from typing import Any, Literal
 
@@ -28,7 +27,6 @@ from google.auth.exceptions import DefaultCredentialsError
 from pydantic import BaseModel, ValidationError
 
 from artemis.config.constants import AgentNode, LLMProvider, LLMUtilsNode
-from artemis.config.settings import settings
 from artemis.utils.cython_compat import CyFunctionDetector
 from third_party.mobile_use.utils.file import load_jsonc
 from third_party.mobile_use.utils.logger import get_logger
@@ -65,24 +63,12 @@ class LLM(BaseModel):
     enable_grounding: bool | None = None
 
     def validate_provider(self, name: str) -> None:
-        """Ensure the required API key or credentials exist in settings for this provider."""
-        if self.provider == "openai":
-            if not settings.OPENAI_API_KEY:
-                raise Exception(f"{name} requires OPENAI_API_KEY in .env")
-        elif self.provider == "google":
-            if not settings.GOOGLE_API_KEY:
-                raise Exception(f"{name} requires GOOGLE_API_KEY in .env")
-        elif self.provider == "vertexai":
-            validate_vertex_ai_credentials()
-        elif self.provider == "anthropic":
-            if not (settings.ANTHROPIC_API_KEY or os.environ.get("ANTHROPIC_API_KEY")):
-                raise Exception(f"{name} requires ANTHROPIC_API_KEY in .env")
-        elif self.provider == "openrouter":
-            if not settings.OPEN_ROUTER_API_KEY:
-                raise Exception(f"{name} requires OPEN_ROUTER_API_KEY in .env")
-        elif self.provider == "xai":
-            if not settings.XAI_API_KEY:
-                raise Exception(f"{name} requires XAI_API_KEY in .env")
+        """Validate this provider through the construction registry."""
+        from artemis.llm.providers import register_builtin_providers
+        from artemis.llm.registry import provider_registry
+
+        register_builtin_providers()
+        provider_registry.validate(self.provider, name)
 
     def __str__(self) -> str:
         return f"{self.provider}/{self.model}"
