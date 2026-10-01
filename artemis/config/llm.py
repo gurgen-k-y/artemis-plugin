@@ -59,14 +59,14 @@ __all__ = [
 
 def lightweight_judge_default() -> "LLMWithFallback":
     """Factory default for the lightweight judge nodes (pixel safety net and
-    planner validation): a flash-lite model at temperature 0."""
+    planner validation): Claude Code Haiku at temperature 0."""
     return LLMWithFallback(
-        provider="google",
-        model="gemini-3.5-flash-lite",
+        provider="claude-code",
+        model="haiku",
         temperature=0.0,
         fallback=LLM(
-            provider="google",
-            model="gemini-3.1-flash-lite",
+            provider="claude-code",
+            model="haiku",
             temperature=0.0,
         ),
     )

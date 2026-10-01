@@ -1005,7 +1005,7 @@ async def test_capsule_outage_without_fallback_exhausts_to_failed():
     assert service.get_summary("chunk:1-2") is None
 
 
-def test_capsule_fallback_model_resolution_google_only_and_not_primary():
+def test_capsule_fallback_model_resolution_same_provider_and_not_primary():
     mgr = HistoryChunkManager(
         capsule_service=StubCapsuleService(),
         chunking_config=SimpleNamespace(
@@ -1027,10 +1027,22 @@ def test_capsule_fallback_model_resolution_google_only_and_not_primary():
         mgr._resolve_capsule_fallback_model(ctx_with("google", "gemini-3.6-flash"))
         == "gemini-3.6-flash"
     )
-    # Non-google fallbacks cannot ride the raw google model path.
+    # Cross-provider fallbacks are left to the main model gateway.
     assert mgr._resolve_capsule_fallback_model(ctx_with("openai", "gpt-4o-mini")) is None
     # A fallback identical to the primary adds nothing.
     assert mgr._resolve_capsule_fallback_model(ctx_with("google", "gemini-3.7-flash")) is None
+
+    claude_mgr = HistoryChunkManager(
+        capsule_service=StubCapsuleService(),
+        chunking_config=SimpleNamespace(
+            provider="claude-code",
+            model="sonnet",
+            max_steps=12,
+            target_source_tokens=2000,
+            max_chunks=8,
+        ),
+    )
+    assert claude_mgr._resolve_capsule_fallback_model(ctx_with("claude-code", "haiku")) == "haiku"
 
 
 @pytest.mark.asyncio

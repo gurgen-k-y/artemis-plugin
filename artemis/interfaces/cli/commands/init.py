@@ -38,24 +38,40 @@ def init_command() -> None:
 
     # 1. Select Provider
     console.print("\n[bold]Step 1: Choose Primary LLM Provider[/bold]")
-    console.print("  [1] Signed-in Codex CLI (no API key)")
-    console.print("  [2] Google Gemini")
-    console.print("  [3] OpenAI API")
-    console.print("  [4] Anthropic API")
-    console.print("  [5] OpenRouter")
+    console.print("  [1] Claude Code (Recommended - local login or setup token)")
+    console.print("  [2] Signed-in Codex CLI")
+    console.print("  [3] Google Gemini")
+    console.print("  [4] OpenAI API")
+    console.print("  [5] Anthropic API")
+    console.print("  [6] OpenRouter")
 
-    choice = Prompt.ask("Select provider", choices=["1", "2", "3", "4", "5"], default="1")
+    choice = Prompt.ask("Select provider", choices=["1", "2", "3", "4", "5", "6"], default="1")
     provider_map = {
-        "1": (None, "Codex CLI"),
-        "2": ("GEMINI_API_KEY", "Google Gemini"),
-        "3": ("OPENAI_API_KEY", "OpenAI API"),
-        "4": ("ANTHROPIC_API_KEY", "Anthropic API"),
-        "5": ("OPEN_ROUTER_API_KEY", "OpenRouter"),
+        "1": (None, "Claude Code", "claude-code"),
+        "2": (None, "Codex CLI", "codex"),
+        "3": ("GEMINI_API_KEY", "Google Gemini", "api"),
+        "4": ("OPENAI_API_KEY", "OpenAI API", "api"),
+        "5": ("ANTHROPIC_API_KEY", "Anthropic API", "api"),
+        "6": ("OPEN_ROUTER_API_KEY", "OpenRouter", "api"),
     }
-    env_key, provider_name = provider_map[choice]
+    env_key, provider_name, provider_kind = provider_map[choice]
 
     api_key = ""
-    if env_key is None:
+    if provider_kind == "claude-code":
+        from artemis.llm.claude import claude_client_status
+
+        ready, detail = claude_client_status()
+        if not ready:
+            console.print(
+                f"\n[bold red]Claude Code is not ready.[/bold red] {detail}\n"
+                "For an interactive login, run [bold cyan]claude auth login[/bold cyan]. "
+                "For automation, run [bold cyan]claude setup-token[/bold cyan], export "
+                "[bold cyan]CLAUDE_CODE_OAUTH_TOKEN[/bold cyan] through your shell or secret "
+                "manager, then rerun [bold cyan]artemis init[/bold cyan]."
+            )
+            raise SystemExit(1)
+        console.print("\n[bold green]✔ Claude Code authentication is ready.[/bold green]")
+    elif provider_kind == "codex":
         from artemis.llm.codex import codex_client_status
 
         ready, detail = codex_client_status()
@@ -144,7 +160,13 @@ def init_command() -> None:
             "",
             "# Execution Defaults",
             "ARTEMIS_DEFAULT_PROFILE=pro",
-            "ARTEMIS_DEFAULT_MODEL=default" if env_key is None else "ARTEMIS_DEFAULT_MODEL=auto",
+            (
+                "ARTEMIS_DEFAULT_MODEL=sonnet"
+                if provider_kind == "claude-code"
+                else "ARTEMIS_DEFAULT_MODEL=default"
+                if provider_kind == "codex"
+                else "ARTEMIS_DEFAULT_MODEL=auto"
+            ),
             "ARTEMIS_TRACES_DIR=./traces",
             "",
         ]

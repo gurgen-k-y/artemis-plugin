@@ -260,6 +260,7 @@ class AgentConfigBuilder(AgentConfigBuilderBase):
         max_turns: int | None = None,
         explorer_mode: ExplorerVersion | None = None,
         step_summarizer: bool | None = None,
+        step_summarizer_provider: str | None = None,
         step_summarizer_model: str | None = None,
         prune_history_xml: bool | None = None,
     ) -> "AgentConfigBuilder":
@@ -271,6 +272,7 @@ class AgentConfigBuilder(AgentConfigBuilderBase):
                 ('flash' one-shot detection, 'pro' short reasoning loop, 'ultra'
                 deep loop); mirrored to ``explorer.flash_mode``
             step_summarizer: Enable/disable asynchronous visual context compressor
+            step_summarizer_provider: Provider for background step summarization
             step_summarizer_model: Lightweight model for background step summarization
             prune_history_xml: Whether to prune outdated XML trees from historical steps
         """
@@ -282,12 +284,15 @@ class AgentConfigBuilder(AgentConfigBuilderBase):
             self._explorer = self._explorer.model_copy(update={"flash_mode": explorer_mode})
         if (
             step_summarizer is not None
+            or step_summarizer_provider is not None
             or step_summarizer_model is not None
             or prune_history_xml is not None
         ):
             sum_updates: dict[str, Any] = {}
             if step_summarizer is not None:
                 sum_updates["enabled"] = step_summarizer
+            if step_summarizer_provider is not None:
+                sum_updates["provider"] = step_summarizer_provider
             if step_summarizer_model is not None:
                 sum_updates["model"] = step_summarizer_model
             if prune_history_xml is not None:
@@ -300,12 +305,14 @@ class AgentConfigBuilder(AgentConfigBuilderBase):
     def with_flash_step_summarizer(
         self,
         enabled: bool = True,
+        provider: str | None = None,
         model: str | None = None,
         prune_history_xml: bool | None = None,
     ) -> "AgentConfigBuilder":
         """Configure Flash asynchronous step state summarizer options."""
         return self.with_flash_config(
             step_summarizer=enabled,
+            step_summarizer_provider=provider,
             step_summarizer_model=model,
             prune_history_xml=prune_history_xml,
         )

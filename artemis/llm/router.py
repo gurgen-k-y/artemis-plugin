@@ -42,6 +42,7 @@ class ModelProvider:
     VERTEX_AI = "vertexai"
     OPENAI = "openai"
     CODEX = "codex"
+    CLAUDE_CODE = "claude-code"
     ANTHROPIC = "anthropic"
     OPENROUTER = "openrouter"
     XAI = "xai"

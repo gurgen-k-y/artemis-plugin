@@ -104,6 +104,29 @@ cd artemis
 
 > **Tip**: Opens `http://localhost:8000` in your default browser with a device connection wizard, live screen mirroring, prompt sandbox, and execution replays. You can also run directly from CLI: `uv run artemis run "Open Settings, find Battery and tell me current level" --profile flash`.
 
+### Claude Code provider (default)
+
+Artemis uses Claude Code Sonnet by default and Haiku for lightweight or fallback work. It can
+reuse an interactive Claude Code login:
+
+```bash
+claude auth login
+uv run artemis init
+uv run artemis doctor
+```
+
+For non-interactive environments, generate a setup token and expose it only through the process
+environment or a secret manager:
+
+```bash
+claude setup-token
+export CLAUDE_CODE_OAUTH_TOKEN="..."
+```
+
+Artemis passes that variable to Claude Code without parsing, logging, or writing the token to the
+repository. The provider runs one-shot sessions with project customizations disabled; Claude selects
+structured Artemis tool calls, while Artemis executes them.
+
 ### Signed-in Codex provider
 
 Artemis can use an existing Codex CLI login without copying or storing its credentials:
@@ -116,7 +139,7 @@ uv run artemis init
 uv run artemis doctor
 ```
 
-Never share a device code. Select `codex` in `config/artemis.jsonc` to use the local client. API-key providers remain available. Provider packages can register additional backends through the `artemis.llm_providers` Python entry-point group.
+Never share a device code. Set the default provider to `codex` in `config/artemis.jsonc` to use the local client. API-key providers remain available. Provider packages can register additional backends through the `artemis.llm_providers` Python entry-point group.
 
 <a id="mcp-setup"></a>
 <a id="mcp"></a>
