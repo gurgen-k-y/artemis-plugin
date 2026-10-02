@@ -50,6 +50,7 @@ __all__ = [
     "LLMConfigUtils",
     "LLMWithFallback",
     "deep_merge_llm_config",
+    "active_provider",
     "get_default_llm_config",
     "initialize_llm_config",
     "lightweight_judge_default",
@@ -61,14 +62,14 @@ __all__ = [
 
 def lightweight_judge_default() -> "LLMWithFallback":
     """Factory default for the lightweight judge nodes (pixel safety net and
-    planner validation): a flash-lite model at temperature 0."""
+    planner validation): Claude Code Haiku at temperature 0."""
     return LLMWithFallback(
-        provider="google",
-        model="gemini-3.5-flash-lite",
+        provider="claude-code",
+        model="haiku",
         temperature=0.0,
         fallback=LLM(
-            provider="google",
-            model="gemini-3.1-flash-lite",
+            provider="claude-code",
+            model="haiku",
             temperature=0.0,
         ),
     )
@@ -231,6 +232,16 @@ def parse_llm_config() -> LLMConfig:
     except Exception as e:
         logger.error(f"Failed to load or parse llm config: {config_path}. Error: {e}")
         raise
+
+
+def active_provider() -> str | None:
+    """Canonical provider of the primary (operator) node, or None if config is unreadable."""
+    from artemis.llm.router import ModelProvider
+
+    try:
+        return ModelProvider.from_string(parse_llm_config().operator.provider)
+    except Exception:
+        return None
 
 
 def initialize_llm_config() -> LLMConfig:

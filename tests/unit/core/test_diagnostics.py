@@ -382,7 +382,7 @@ async def test_llm_credentials_probe_rejects_unselected_codex_login(monkeypatch)
         "VERTEX_AI_PROJECT",
     ):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setattr(probe, "_configured_llm_providers", lambda: {"google"})
+    monkeypatch.setattr("artemis.config.llm.active_provider", lambda: "google")
     monkeypatch.setattr(
         "artemis.llm.codex.codex_client_status",
         lambda: (True, "Logged in"),
@@ -408,7 +408,7 @@ async def test_llm_credentials_probe_accepts_all_codex_configuration(monkeypatch
         "VERTEX_AI_PROJECT",
     ):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setattr(probe, "_configured_llm_providers", lambda: {"codex"})
+    monkeypatch.setattr("artemis.config.llm.active_provider", lambda: "codex")
     monkeypatch.setattr(
         "artemis.llm.codex.codex_client_status",
         lambda: (True, "Logged in"),

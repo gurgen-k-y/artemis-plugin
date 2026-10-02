@@ -217,7 +217,25 @@ def _validate_vertex(_label: str) -> None:
 
 
 def register_builtin_providers() -> None:
+    from artemis.llm.claude import ClaudeCodeChatModel, claude_client_status
     from artemis.llm.codex import CodexAppServerChatModel, codex_client_status
+
+    claude_status: tuple[bool, str] | None = None
+
+    def claude_code(endpoint: Endpoint) -> BaseChatModel:
+        return ClaudeCodeChatModel(
+            model_name=endpoint.model_name,
+            reasoning_effort=getattr(endpoint, "reasoning_effort", None),
+            timeout_seconds=getattr(endpoint, "timeout_seconds", 180.0),
+        )
+
+    def validate_claude_code(label: str) -> None:
+        nonlocal claude_status
+        if claude_status is None:
+            claude_status = claude_client_status()
+        ready, detail = claude_status
+        if not ready:
+            raise RuntimeError(f"{label} requires Claude Code authentication: {detail}")
 
     def codex(endpoint: Endpoint) -> BaseChatModel:
         return CodexAppServerChatModel(
@@ -236,6 +254,12 @@ def register_builtin_providers() -> None:
         ProviderAdapter("vertexai", _vertex, ("vertex", "vertex-ai"), _validate_vertex),
         ProviderAdapter("openai", _openai_compatible, validator=_validate_openai),
         ProviderAdapter("codex", codex, ("codex-client", "chatgpt-client"), validate_codex),
+        ProviderAdapter(
+            "claude-code",
+            claude_code,
+            ("claude-client",),
+            validate_claude_code,
+        ),
         ProviderAdapter("anthropic", _anthropic, ("claude",), _validate_anthropic),
         ProviderAdapter("openrouter", _openai_compatible, ("open-router",), _validate_openrouter),
         ProviderAdapter("xai", _openai_compatible, ("grok", "x-ai"), _validate_xai),

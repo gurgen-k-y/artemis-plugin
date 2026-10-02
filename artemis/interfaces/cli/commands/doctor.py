@@ -162,17 +162,45 @@ def _npm_row() -> ExtraRow:
 
 
 def _codex_row() -> ExtraRow:
+    from artemis.config.llm import active_provider
     from artemis.llm.codex import codex_client_status
 
     ready, detail = codex_client_status()
+    required = active_provider() == "codex"
     return ExtraRow(
         key="codex_client",
         title="Codex CLI",
         status="pass" if ready else "missing",
         status_markup=(
-            "[bold green]✔ Signed in[/bold green]" if ready else "[dim]⚪ Optional[/dim]"
+            "[bold green]✔ Signed in[/bold green]"
+            if ready
+            else "[bold red]✘ Required[/bold red]"
+            if required
+            else "[dim]⚪ Optional[/dim]"
         ),
         summary="Signed in" if ready else "Not Ready",
+        detail=detail,
+    )
+
+
+def _claude_row() -> ExtraRow:
+    from artemis.config.llm import active_provider
+    from artemis.llm.claude import claude_client_status
+
+    ready, detail = claude_client_status()
+    required = active_provider() == "claude-code"
+    return ExtraRow(
+        key="claude_code",
+        title="Claude Code",
+        status="pass" if ready else "missing",
+        status_markup=(
+            "[bold green]✔ Authenticated[/bold green]"
+            if ready
+            else "[bold red]✘ Required[/bold red]"
+            if required
+            else "[dim]⚪ Optional[/dim]"
+        ),
+        summary="Authenticated" if ready else "Not Ready",
         detail=detail,
     )
 
@@ -449,7 +477,7 @@ def doctor_command(
 ) -> None:
     """Run diagnostics to inspect system dependencies, device connectivity, and configuration."""
     results, fixes = asyncio.run(_diagnose(fix))
-    extras = [_codex_row(), _npm_row(), _showcase_row()]
+    extras = [_claude_row(), _codex_row(), _npm_row(), _showcase_row()]
     helper_row = _helper_row(results)
     if helper_row is not None:
         extras.append(helper_row)

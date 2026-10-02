@@ -47,25 +47,56 @@ class LLMCredentialsProbe(BaseProbe):
             return f"{key_str[:6]}...{key_str[-4:]}"
         return "***"
 
-    def _configured_llm_providers(self) -> set[str]:
-        from artemis.config.llm import parse_llm_config
+    async def _local_client_result(self, metadata: dict[str, Any]) -> ProbeResult | None:
+        """Verdict for configs whose active provider is a signed-in local CLI, not an API key."""
+        from artemis.config.llm import active_provider
 
-        config = parse_llm_config().model_dump()
-        providers: set[str] = set()
+        provider = active_provider()
+        if provider == "claude-code":
+            from artemis.llm.claude import claude_client_status as status_fn
 
-        def collect(value: Any) -> None:
-            if isinstance(value, dict):
-                provider = value.get("provider")
-                if isinstance(provider, str):
-                    providers.add(provider.lower())
-                for nested in value.values():
-                    collect(nested)
-            elif isinstance(value, list):
-                for nested in value:
-                    collect(nested)
+            label, login = "Claude Code", "claude auth login"
+        elif provider == "codex":
+            from artemis.llm.codex import codex_client_status as status_fn
 
-        collect(config)
-        return providers
+            label, login = "Codex CLI", "codex login"
+        else:
+            return None
+        ready, detail = await asyncio.to_thread(status_fn)
+        if ready:
+            return ProbeResult(
+                id=self.probe_id,
+                category=self.category,
+                title="Multimodal LLM API Key",
+                status=ProbeStatus.PASS,
+                is_blocker=self.is_blocker,
+                summary=f"Active ({label})",
+                description=f"{label} is ready. {detail}",
+                metadata=metadata,
+                actions=[
+                    ProbeAction(
+                        action_type="hint",
+                        label="Provider Active",
+                        payload=f"{label} login is active; no API key required.",
+                    )
+                ],
+            )
+        return ProbeResult(
+            id=self.probe_id,
+            category=self.category,
+            title="Multimodal LLM API Key",
+            status=ProbeStatus.FAIL,
+            is_blocker=self.is_blocker,
+            summary=f"{label} Not Ready",
+            description=detail,
+            metadata=metadata,
+            actions=[
+                ProbeAction(action_type="command", label=f"Run {login}", payload=login),
+                ProbeAction(
+                    action_type="command", label="Run Artemis Init", payload="artemis init"
+                ),
+            ],
+        )
 
     async def probe(self) -> ProbeResult:
         import os
@@ -183,6 +214,10 @@ class LLMCredentialsProbe(BaseProbe):
             "api_keys": api_keys_map,
         }
 
+        local = await self._local_client_result(metadata)
+        if local is not None:
+            return local
+
         # Case 1: Gemini API Key configured (Standard / Recommended)
         if gemini_key:
             masked = self._mask_key(gemini_key.get_secret_value())
@@ -225,31 +260,7 @@ class LLMCredentialsProbe(BaseProbe):
                 ],
             )
 
-        # Case 3: Signed-in Codex CLI with an all-Codex model configuration
-        if self._configured_llm_providers() == {"codex"}:
-            from artemis.llm.codex import codex_client_status
-
-            codex_ready, codex_detail = await asyncio.to_thread(codex_client_status)
-            if codex_ready:
-                return ProbeResult(
-                    id=self.probe_id,
-                    category=self.category,
-                    title="Multimodal LLM API Key",
-                    status=ProbeStatus.PASS,
-                    is_blocker=self.is_blocker,
-                    summary="Active (Codex CLI)",
-                    description=f"Signed-in Codex CLI is ready. {codex_detail}",
-                    metadata=metadata,
-                    actions=[
-                        ProbeAction(
-                            action_type="hint",
-                            label="Provider Active",
-                            payload="Codex CLI login is active; no API key required.",
-                        )
-                    ],
-                )
-
-        # Case 4: No LLM key configured
+        # Case 3: No LLM key configured
         return ProbeResult(
             id=self.probe_id,
             category=self.category,

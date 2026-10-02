@@ -163,6 +163,7 @@ class FlashRunner:
         self.summarizer = (
             VisualStepSummarizer(
                 ctx,
+                provider=self.step_summarizer_cfg.provider,
                 model_name=self.step_summarizer_cfg.model,
                 retry_limit=self.memory_runtime_cfg.retry_limit,
                 max_concurrency=self.memory_runtime_cfg.max_concurrency,

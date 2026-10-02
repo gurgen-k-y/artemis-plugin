@@ -152,9 +152,21 @@ def test_llm_config_parsing_and_merging():
     """Test LLMConfig parsing, agent querying, and deep merging."""
     llm_cfg = get_default_llm_config()
     assert isinstance(llm_cfg, LLMConfig)
-    assert llm_cfg.planner.provider in ("google", "openai", "openrouter", "xai", "vertexai")
+    assert llm_cfg.planner.provider in (
+        "claude-code",
+        "codex",
+        "google",
+        "openai",
+        "openrouter",
+        "xai",
+        "vertexai",
+    )
     assert llm_cfg.get_agent("planner") is not None
     assert llm_cfg.get_utils("hopper") is not None
+    assert llm_cfg.planner.provider == "claude-code"
+    assert llm_cfg.planner.model == "sonnet"
+    assert llm_cfg.planner.fallback.provider == "claude-code"
+    assert llm_cfg.planner.fallback.model == "haiku"
 
     # Deep merge overrides
     overrides = {
@@ -175,6 +187,10 @@ def test_agent_config_loading():
     # The per-agent override ships empty so the profile knobs decide; caching
     # ships unset so each tier applies its own default (off pro, on ultra).
     assert agent_cfg.explorer_versions == {}
+    assert agent_cfg.flash.step_summarizer.provider == "claude-code"
+    assert agent_cfg.flash.step_summarizer.model == "haiku"
+    assert agent_cfg.memory.chunking.provider == "claude-code"
+    assert agent_cfg.memory.chunking.model == "haiku"
     assert agent_cfg.explorer.default_version == "flash"
     assert agent_cfg.explorer.flash_mode == "flash"
     assert agent_cfg.explorer.pro_mode == "flash"

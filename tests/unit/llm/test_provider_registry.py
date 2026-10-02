@@ -31,6 +31,8 @@ def test_model_endpoint_accepts_plugin_provider_names():
 
     assert endpoint.provider == "future-provider"
     assert ModelProvider.from_string("gemini") == "google"
+    assert ModelProvider.from_string("claude-client") == "claude-code"
+    assert ModelProvider.from_string("claude") == "anthropic"
 
 
 def test_tool_choice_none_forbids_tool_calls():
