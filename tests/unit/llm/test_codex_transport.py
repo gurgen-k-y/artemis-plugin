@@ -63,6 +63,7 @@ async def test_completion_collects_turn_text_and_usage():
     assert result["usage"] == {"last": {"totalTokens": 5}}
     assert client.requests[0][1]["sandbox"] == "read-only"
     assert client.requests[0][1]["approvalPolicy"] == "never"
+    assert "allowProviderModelFallback" not in client.requests[0][1]
     assert "thread-1" not in client._thread_queues
 
 

@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from artemis.config.llm import _expand_default_into_nodes
 from artemis.llm.registry import ProviderAdapter, ProviderRegistry
 from artemis.llm.router import ModelEndpoint, ModelProvider
 
@@ -55,3 +56,21 @@ def test_llm_preset_env_selects_default(monkeypatch):
     monkeypatch.setenv("ARTEMIS_LLM_PRESET", "missing")
     with pytest.raises(ValueError, match="Unknown"):
         _apply_selected_preset(config)
+
+
+def test_node_provider_override_survives_preset_expansion():
+    config = {
+        "default": {"provider": "codex", "model": "default"},
+        "nodes": {
+            "object_detector": {
+                "provider": "google",
+                "model": "gemini-robotics-er-2-preview",
+            },
+            "hopper": {"provider": "google", "model": "gemini-3.5-flash-lite"},
+        },
+    }
+
+    expanded = _expand_default_into_nodes(config)
+
+    assert expanded["utils"]["object_detector"]["provider"] == "google"
+    assert expanded["utils"]["hopper"]["provider"] == "google"

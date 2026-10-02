@@ -368,6 +368,59 @@ async def test_llm_credentials_probe_structure():
 
 
 @pytest.mark.asyncio
+async def test_llm_credentials_probe_rejects_unselected_codex_login(monkeypatch):
+    from artemis.config import settings
+
+    probe = LLMCredentialsProbe()
+    monkeypatch.setattr(type(settings), "get_api_key", lambda _self, _provider: None)
+    for name in (
+        "DEEPSEEK_API_KEY",
+        "GROQ_API_KEY",
+        "OPENAI_BASE_URL",
+        "OLLAMA_BASE_URL",
+        "VLLM_BASE_URL",
+        "VERTEX_AI_PROJECT",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr("artemis.config.llm.active_provider", lambda: "google")
+    monkeypatch.setattr(
+        "artemis.llm.codex.codex_client_status",
+        lambda: (True, "Logged in"),
+    )
+
+    result = await probe.probe()
+
+    assert result.status == ProbeStatus.FAIL
+
+
+@pytest.mark.asyncio
+async def test_llm_credentials_probe_accepts_all_codex_configuration(monkeypatch):
+    from artemis.config import settings
+
+    probe = LLMCredentialsProbe()
+    monkeypatch.setattr(type(settings), "get_api_key", lambda _self, _provider: None)
+    for name in (
+        "DEEPSEEK_API_KEY",
+        "GROQ_API_KEY",
+        "OPENAI_BASE_URL",
+        "OLLAMA_BASE_URL",
+        "VLLM_BASE_URL",
+        "VERTEX_AI_PROJECT",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr("artemis.config.llm.active_provider", lambda: "codex")
+    monkeypatch.setattr(
+        "artemis.llm.codex.codex_client_status",
+        lambda: (True, "Logged in"),
+    )
+
+    result = await probe.probe()
+
+    assert result.status == ProbeStatus.PASS
+    assert result.summary == "Active (Codex CLI)"
+
+
+@pytest.mark.asyncio
 async def test_toolchain_probe_structure():
     """Verify ToolchainProbe returns valid probe category, metadata, and schema."""
     probe = ToolchainProbe()
