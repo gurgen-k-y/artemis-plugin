@@ -25,6 +25,7 @@ ENV_ARTEMIS_APP_DIR = "ARTEMIS_APP_DIR"
 ENV_ANTIGRAVITY_APP_DIR = "ANTIGRAVITY_APP_DIR"
 ENV_ARTEMIS_USE_USER_DIR = "ARTEMIS_USE_USER_DIR"
 ENV_ARTEMIS_TRACES_DIR = "ARTEMIS_TRACES_DIR"
+ENV_ARTEMIS_LLM_PRESET = "ARTEMIS_LLM_PRESET"
 ENV_DATA_ENGINE_DB_PATH = "DATA_ENGINE_DB_PATH"
 
 # Cloud Brain & Distributed Execution
@@ -118,9 +119,7 @@ DEFAULT_EXPLORER_VERSION: Literal["flash", "pro", "ultra"] = "flash"
 # Literals and Type Aliases
 # ==============================================================================
 
-LLMProvider = Literal[
-    "openai", "google", "openrouter", "xai", "vertexai", "anthropic", "ollama", "vllm", "custom"
-]
+type LLMProvider = str
 ExplorerVersion = Literal["flash", "pro", "ultra"]
 
 LLMUtilsNode = Literal[

@@ -15,10 +15,12 @@
 """LLM provider, model hierarchy, fallback chaining, and configuration loaders."""
 
 from pathlib import Path
+import os
 from typing import Any
 
 
 from artemis.config.constants import (
+    ENV_ARTEMIS_LLM_PRESET,
     LLM_CONFIG_FILENAME,
     AgentNode,
 )
@@ -197,6 +199,17 @@ def _expand_default_into_nodes(config_dict: dict) -> dict:
     return result
 
 
+def _apply_selected_preset(config_dict: dict) -> dict:
+    """Replace ``default`` with the preset named by ARTEMIS_LLM_PRESET, if any."""
+    name = os.getenv(ENV_ARTEMIS_LLM_PRESET, "").strip()
+    if not name:
+        return config_dict
+    preset = (config_dict.get("presets") or {}).get(name)
+    if preset is None:
+        raise ValueError(f"Unknown {ENV_ARTEMIS_LLM_PRESET} preset: {name!r}")
+    return {**config_dict, "default": preset}
+
+
 def parse_llm_config() -> LLMConfig:
     """Parse and instantiate LLMConfig from artemis.jsonc or llm-config.json."""
     config_path = None
@@ -213,7 +226,7 @@ def parse_llm_config() -> LLMConfig:
     try:
         with open(config_path, encoding="utf-8") as f:
             config_dict = load_jsonc(f)
-            expanded_dict = _expand_default_into_nodes(config_dict)
+            expanded_dict = _expand_default_into_nodes(_apply_selected_preset(config_dict))
             return LLMConfig.model_validate(expanded_dict)
     except Exception as e:
         logger.error(f"Failed to load or parse llm config: {config_path}. Error: {e}")
