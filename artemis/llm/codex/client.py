@@ -207,7 +207,6 @@ class CodexAppServerClient:
             "serviceName": "artemis",
             "baseInstructions": instructions,
             "developerInstructions": developer_instructions,
-            "allowProviderModelFallback": False,
         }
         if model.lower() not in {"auto", "default"}:
             params["model"] = model

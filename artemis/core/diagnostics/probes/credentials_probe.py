@@ -47,6 +47,26 @@ class LLMCredentialsProbe(BaseProbe):
             return f"{key_str[:6]}...{key_str[-4:]}"
         return "***"
 
+    def _configured_llm_providers(self) -> set[str]:
+        from artemis.config.llm import parse_llm_config
+
+        config = parse_llm_config().model_dump()
+        providers: set[str] = set()
+
+        def collect(value: Any) -> None:
+            if isinstance(value, dict):
+                provider = value.get("provider")
+                if isinstance(provider, str):
+                    providers.add(provider.lower())
+                for nested in value.values():
+                    collect(nested)
+            elif isinstance(value, list):
+                for nested in value:
+                    collect(nested)
+
+        collect(config)
+        return providers
+
     async def probe(self) -> ProbeResult:
         import os
 
@@ -205,28 +225,29 @@ class LLMCredentialsProbe(BaseProbe):
                 ],
             )
 
-        # Case 3: Signed-in Codex CLI (no API key)
-        from artemis.llm.codex import codex_client_status
+        # Case 3: Signed-in Codex CLI with an all-Codex model configuration
+        if self._configured_llm_providers() == {"codex"}:
+            from artemis.llm.codex import codex_client_status
 
-        codex_ready, codex_detail = await asyncio.to_thread(codex_client_status)
-        if codex_ready:
-            return ProbeResult(
-                id=self.probe_id,
-                category=self.category,
-                title="Multimodal LLM API Key",
-                status=ProbeStatus.PASS,
-                is_blocker=self.is_blocker,
-                summary="Active (Codex CLI)",
-                description=f"Signed-in Codex CLI is ready. {codex_detail}",
-                metadata=metadata,
-                actions=[
-                    ProbeAction(
-                        action_type="hint",
-                        label="Provider Active",
-                        payload="Codex CLI login is active; no API key required.",
-                    )
-                ],
-            )
+            codex_ready, codex_detail = await asyncio.to_thread(codex_client_status)
+            if codex_ready:
+                return ProbeResult(
+                    id=self.probe_id,
+                    category=self.category,
+                    title="Multimodal LLM API Key",
+                    status=ProbeStatus.PASS,
+                    is_blocker=self.is_blocker,
+                    summary="Active (Codex CLI)",
+                    description=f"Signed-in Codex CLI is ready. {codex_detail}",
+                    metadata=metadata,
+                    actions=[
+                        ProbeAction(
+                            action_type="hint",
+                            label="Provider Active",
+                            payload="Codex CLI login is active; no API key required.",
+                        )
+                    ],
+                )
 
         # Case 4: No LLM key configured
         return ProbeResult(

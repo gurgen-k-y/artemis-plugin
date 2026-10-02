@@ -91,6 +91,7 @@
     // To achieve accurate [x, y] point and bounding box localization, this node MUST use specialized Gemini ER (Embodied Reasoning / Robotics) models:
     // e.g., "gemini-robotics-er-2-preview". Non-ER models will fail spatial coordinate detection.
     "object_detector": {
+      "provider": "google",
       "model": "gemini-robotics-er-2-preview",
       "fallback": {
         "provider": "google",
@@ -111,6 +112,7 @@
 
     // 🔽 Hopper: Fast lightweight package name locator
     "hopper": {
+      "provider": "google",
       "model": "gemini-3.5-flash-lite",
       "fallback": {
         "provider": "google",
