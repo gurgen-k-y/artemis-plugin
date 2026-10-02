@@ -47,14 +47,14 @@ def init_command() -> None:
 
     choice = Prompt.ask("Select provider", choices=["1", "2", "3", "4", "5", "6"], default="1")
     provider_map = {
-        "1": (None, "Claude Code", "claude-code"),
-        "2": (None, "Codex CLI", "codex"),
-        "3": ("GEMINI_API_KEY", "Google Gemini", "api"),
-        "4": ("OPENAI_API_KEY", "OpenAI API", "api"),
-        "5": ("ANTHROPIC_API_KEY", "Anthropic API", "api"),
-        "6": ("OPEN_ROUTER_API_KEY", "OpenRouter", "api"),
+        "1": (None, "Claude Code", "claude-code", "claude-code"),
+        "2": (None, "Codex CLI", "codex", "codex"),
+        "3": ("GEMINI_API_KEY", "Google Gemini", "api", "gemini-flagship"),
+        "4": ("OPENAI_API_KEY", "OpenAI API", "api", "openai-gpt4o"),
+        "5": ("ANTHROPIC_API_KEY", "Anthropic API", "api", "anthropic-sonnet"),
+        "6": ("OPEN_ROUTER_API_KEY", "OpenRouter", "api", "openrouter-gemini"),
     }
-    env_key, provider_name, provider_kind = provider_map[choice]
+    env_key, provider_name, provider_kind, preset = provider_map[choice]
 
     api_key = ""
     if provider_kind == "claude-code":
@@ -160,13 +160,7 @@ def init_command() -> None:
             "",
             "# Execution Defaults",
             "ARTEMIS_DEFAULT_PROFILE=pro",
-            (
-                "ARTEMIS_DEFAULT_MODEL=sonnet"
-                if provider_kind == "claude-code"
-                else "ARTEMIS_DEFAULT_MODEL=default"
-                if provider_kind == "codex"
-                else "ARTEMIS_DEFAULT_MODEL=auto"
-            ),
+            f"ARTEMIS_LLM_PRESET={preset}",
             "ARTEMIS_TRACES_DIR=./traces",
             "",
         ]

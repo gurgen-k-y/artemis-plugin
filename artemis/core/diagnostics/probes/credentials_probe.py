@@ -14,6 +14,7 @@
 
 """LLM & Multimodal Vision Credentials Readiness Probe."""
 
+import asyncio
 from typing import Any
 from artemis.config import settings
 from artemis.core.diagnostics.probes.base import BaseProbe
@@ -204,7 +205,30 @@ class LLMCredentialsProbe(BaseProbe):
                 ],
             )
 
-        # Case 3: No LLM key configured
+        # Case 3: Signed-in Codex CLI (no API key)
+        from artemis.llm.codex import codex_client_status
+
+        codex_ready, codex_detail = await asyncio.to_thread(codex_client_status)
+        if codex_ready:
+            return ProbeResult(
+                id=self.probe_id,
+                category=self.category,
+                title="Multimodal LLM API Key",
+                status=ProbeStatus.PASS,
+                is_blocker=self.is_blocker,
+                summary="Active (Codex CLI)",
+                description=f"Signed-in Codex CLI is ready. {codex_detail}",
+                metadata=metadata,
+                actions=[
+                    ProbeAction(
+                        action_type="hint",
+                        label="Provider Active",
+                        payload="Codex CLI login is active; no API key required.",
+                    )
+                ],
+            )
+
+        # Case 4: No LLM key configured
         return ProbeResult(
             id=self.probe_id,
             category=self.category,

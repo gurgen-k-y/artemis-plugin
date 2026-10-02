@@ -22,6 +22,8 @@ class StubClient(CodexAppServerClient):
             for event in self.events:
                 queue.put_nowait(event)
             return {"turn": {"id": "turn-1"}}
+        if method == "turn/interrupt":
+            return {}
         raise AssertionError(method)
 
 
@@ -81,6 +83,7 @@ async def test_completion_timeout_cleans_thread_queue():
         )
 
     assert "thread-1" not in client._thread_queues
+    assert ("turn/interrupt", {"threadId": "thread-1", "turnId": "turn-1"}) in client.requests
 
 
 def test_missing_codex_guides_device_auth(monkeypatch):
