@@ -29,7 +29,7 @@ def format_tools(
 
 
 def response_contract(tools: list[dict[str, Any]], tool_choice: Any) -> tuple[dict[str, Any], str]:
-    if not tools:
+    if not tools or tool_choice == "none":
         return (
             {
                 "type": "object",

@@ -37,6 +37,16 @@
       "model": "gemini-2.5-flash",
       "fallback": { "provider": "google", "model": "gemini-2.0-flash" }
     },
+    "anthropic-sonnet": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "fallback": { "provider": "anthropic", "model": "claude-haiku-4-5" }
+    },
+    "openrouter-gemini": {
+      "provider": "openrouter",
+      "model": "google/gemini-2.5-flash",
+      "fallback": { "provider": "openrouter", "model": "google/gemini-2.0-flash-001" }
+    },
     "openai-gpt4o": {
       "provider": "openai",
       "model": "gpt-4o",

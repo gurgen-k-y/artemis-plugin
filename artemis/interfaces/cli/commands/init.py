@@ -46,13 +46,13 @@ def init_command() -> None:
 
     choice = Prompt.ask("Select provider", choices=["1", "2", "3", "4", "5"], default="1")
     provider_map = {
-        "1": (None, "Codex CLI"),
-        "2": ("GEMINI_API_KEY", "Google Gemini"),
-        "3": ("OPENAI_API_KEY", "OpenAI API"),
-        "4": ("ANTHROPIC_API_KEY", "Anthropic API"),
-        "5": ("OPEN_ROUTER_API_KEY", "OpenRouter"),
+        "1": (None, "Codex CLI", "codex"),
+        "2": ("GEMINI_API_KEY", "Google Gemini", "gemini-flagship"),
+        "3": ("OPENAI_API_KEY", "OpenAI API", "openai-gpt4o"),
+        "4": ("ANTHROPIC_API_KEY", "Anthropic API", "anthropic-sonnet"),
+        "5": ("OPEN_ROUTER_API_KEY", "OpenRouter", "openrouter-gemini"),
     }
-    env_key, provider_name = provider_map[choice]
+    env_key, provider_name, preset = provider_map[choice]
 
     api_key = ""
     if env_key is None:
@@ -144,7 +144,7 @@ def init_command() -> None:
             "",
             "# Execution Defaults",
             "ARTEMIS_DEFAULT_PROFILE=pro",
-            "ARTEMIS_DEFAULT_MODEL=default" if env_key is None else "ARTEMIS_DEFAULT_MODEL=auto",
+            f"ARTEMIS_LLM_PRESET={preset}",
             "ARTEMIS_TRACES_DIR=./traces",
             "",
         ]

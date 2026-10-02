@@ -171,7 +171,7 @@ class CodexAppServerClient:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.debug("Codex app-server reader stopped: %s", exc, exc_info=True)
+            logger.debug(f"Codex app-server reader stopped: {exc}", exc_info=True)
         finally:
             error = CodexAppServerError("Codex app-server exited before completion")
             for future in self._pending.values():
@@ -182,7 +182,7 @@ class CodexAppServerClient:
         assert self.process is not None and self.process.stderr is not None
         try:
             while line := await self.process.stderr.readline():
-                logger.debug("codex app-server: %s", line.decode(errors="replace").rstrip())
+                logger.debug(f"codex app-server: {line.decode(errors='replace').rstrip()}")
         except asyncio.CancelledError:
             raise
 
@@ -218,6 +218,7 @@ class CodexAppServerClient:
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self._thread_queues[thread_id] = queue
         usage: dict[str, Any] | None = None
+        turn_id: str | None = None
         try:
             turn_params: dict[str, Any] = {
                 "threadId": thread_id,
@@ -226,7 +227,8 @@ class CodexAppServerClient:
             }
             if effort and effort != "none":
                 turn_params["effort"] = effort
-            await self.request("turn/start", turn_params)
+            turn_started = await self.request("turn/start", turn_params)
+            turn_id = ((turn_started or {}).get("turn") or {}).get("id")
 
             async def wait_for_turn() -> dict[str, Any]:
                 nonlocal usage
@@ -240,6 +242,7 @@ class CodexAppServerClient:
 
             turn = await asyncio.wait_for(wait_for_turn(), timeout_seconds)
         except TimeoutError as exc:
+            await self._interrupt_turn(thread_id, turn_id)
             raise CodexAppServerError(
                 f"Codex model call timed out after {timeout_seconds:g} seconds"
             ) from exc
@@ -262,6 +265,16 @@ class CodexAppServerClient:
             "model": (started or {}).get("model") or model,
             "usage": usage,
         }
+
+    async def _interrupt_turn(self, thread_id: str, turn_id: str | None) -> None:
+        if not turn_id:
+            return
+        try:
+            await asyncio.wait_for(
+                self.request("turn/interrupt", {"threadId": thread_id, "turnId": turn_id}), 5
+            )
+        except Exception as exc:
+            logger.debug(f"Could not interrupt Codex turn {turn_id}: {exc}")
 
     async def close(self) -> None:
         process = self.process

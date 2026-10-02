@@ -30,3 +30,26 @@ def test_model_endpoint_accepts_plugin_provider_names():
 
     assert endpoint.provider == "future-provider"
     assert ModelProvider.from_string("gemini") == "google"
+
+
+def test_tool_choice_none_forbids_tool_calls():
+    from artemis.llm.client_messages import response_contract
+
+    tools = [{"type": "function", "function": {"name": "tap", "parameters": {}}}]
+
+    schema, _ = response_contract(tools, "none")
+
+    assert "tool_name" not in schema["properties"]
+
+
+def test_llm_preset_env_selects_default(monkeypatch):
+    from artemis.config.llm import _apply_selected_preset
+
+    config = {"default": {"provider": "google"}, "presets": {"codex": {"provider": "codex"}}}
+    monkeypatch.setenv("ARTEMIS_LLM_PRESET", "codex")
+
+    assert _apply_selected_preset(config)["default"] == {"provider": "codex"}
+
+    monkeypatch.setenv("ARTEMIS_LLM_PRESET", "missing")
+    with pytest.raises(ValueError, match="Unknown"):
+        _apply_selected_preset(config)
