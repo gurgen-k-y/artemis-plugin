@@ -23,6 +23,34 @@ def find_claude_binary() -> str | None:
     return shutil.which("claude")
 
 
+MIN_CLAUDE_VERSION = (2, 1, 259)
+
+
+def _installed_version(binary: str) -> tuple[int, ...] | None:
+    import re
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            [binary, "--version"], capture_output=True, text=True, timeout=10, check=False
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r"(\d+)\.(\d+)\.(\d+)", result.stdout)
+    return tuple(int(part) for part in match.groups()) if match else None
+
+
+def _version_error(binary: str) -> str | None:
+    version = _installed_version(binary)
+    if version is None or version >= MIN_CLAUDE_VERSION:
+        return None
+    required = ".".join(map(str, MIN_CLAUDE_VERSION))
+    found = ".".join(map(str, version))
+    return (
+        f"Claude Code {found} is too old; Artemis needs {required} or newer. Run `claude update`."
+    )
+
+
 def claude_client_status() -> tuple[bool, str]:
     binary = find_claude_binary()
     if binary is None:
@@ -31,6 +59,8 @@ def claude_client_status() -> tuple[bool, str]:
             "Claude Code was not found. Install it, then run `claude auth login`, or run "
             "`claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN`.",
         )
+    if (error := _version_error(binary)) is not None:
+        return False, error
     if os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
         return True, "Claude Code setup token is available through CLAUDE_CODE_OAUTH_TOKEN."
 

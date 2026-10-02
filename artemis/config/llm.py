@@ -50,6 +50,7 @@ __all__ = [
     "LLMConfigUtils",
     "LLMWithFallback",
     "deep_merge_llm_config",
+    "active_provider",
     "get_default_llm_config",
     "initialize_llm_config",
     "lightweight_judge_default",
@@ -231,6 +232,16 @@ def parse_llm_config() -> LLMConfig:
     except Exception as e:
         logger.error(f"Failed to load or parse llm config: {config_path}. Error: {e}")
         raise
+
+
+def active_provider() -> str | None:
+    """Canonical provider of the primary (operator) node, or None if config is unreadable."""
+    from artemis.llm.router import ModelProvider
+
+    try:
+        return ModelProvider.from_string(parse_llm_config().operator.provider)
+    except Exception:
+        return None
 
 
 def initialize_llm_config() -> LLMConfig:

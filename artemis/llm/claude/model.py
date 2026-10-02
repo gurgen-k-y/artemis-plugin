@@ -66,7 +66,7 @@ class ClaudeCodeChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         del stop, run_manager
-        tools = list(kwargs.get("tools") or [])
+        tools = [] if kwargs.get("tool_choice") == "none" else list(kwargs.get("tools") or [])
         output_schema, contract = response_contract(tools, kwargs.get("tool_choice"))
         transcript, images, temp_paths = message_transcript(messages)
         try:
@@ -103,7 +103,7 @@ class ClaudeCodeChatModel(BaseChatModel):
                 try:
                     path.unlink(missing_ok=True)
                 except OSError:
-                    logger.debug("Could not remove temporary Claude image %s", path)
+                    logger.debug(f"Could not remove temporary Claude image {path}")
 
         parsed = parse_response(result["text"])
         usage = result.get("usage") or {}

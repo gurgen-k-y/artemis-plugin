@@ -47,6 +47,57 @@ class LLMCredentialsProbe(BaseProbe):
             return f"{key_str[:6]}...{key_str[-4:]}"
         return "***"
 
+    async def _local_client_result(self, metadata: dict[str, Any]) -> ProbeResult | None:
+        """Verdict for configs whose active provider is a signed-in local CLI, not an API key."""
+        from artemis.config.llm import active_provider
+
+        provider = active_provider()
+        if provider == "claude-code":
+            from artemis.llm.claude import claude_client_status as status_fn
+
+            label, login = "Claude Code", "claude auth login"
+        elif provider == "codex":
+            from artemis.llm.codex import codex_client_status as status_fn
+
+            label, login = "Codex CLI", "codex login"
+        else:
+            return None
+        ready, detail = await asyncio.to_thread(status_fn)
+        if ready:
+            return ProbeResult(
+                id=self.probe_id,
+                category=self.category,
+                title="Multimodal LLM API Key",
+                status=ProbeStatus.PASS,
+                is_blocker=self.is_blocker,
+                summary=f"Active ({label})",
+                description=f"{label} is ready. {detail}",
+                metadata=metadata,
+                actions=[
+                    ProbeAction(
+                        action_type="hint",
+                        label="Provider Active",
+                        payload=f"{label} login is active; no API key required.",
+                    )
+                ],
+            )
+        return ProbeResult(
+            id=self.probe_id,
+            category=self.category,
+            title="Multimodal LLM API Key",
+            status=ProbeStatus.FAIL,
+            is_blocker=self.is_blocker,
+            summary=f"{label} Not Ready",
+            description=detail,
+            metadata=metadata,
+            actions=[
+                ProbeAction(action_type="command", label=f"Run {login}", payload=login),
+                ProbeAction(
+                    action_type="command", label="Run Artemis Init", payload="artemis init"
+                ),
+            ],
+        )
+
     async def probe(self) -> ProbeResult:
         import os
 
@@ -162,6 +213,10 @@ class LLMCredentialsProbe(BaseProbe):
             "current_gemini_key": gemini_key.get_secret_value() if gemini_key else "",
             "api_keys": api_keys_map,
         }
+
+        local = await self._local_client_result(metadata)
+        if local is not None:
+            return local
 
         # Case 1: Gemini API Key configured (Standard / Recommended)
         if gemini_key:

@@ -256,3 +256,15 @@ def test_missing_claude_guides_login_and_setup_token(monkeypatch):
     assert ready is False
     assert "claude auth login" in detail
     assert "claude setup-token" in detail
+
+
+def test_old_claude_version_is_not_ready(monkeypatch):
+    import artemis.llm.claude.client as client
+
+    monkeypatch.setattr(client, "find_claude_binary", lambda: "claude")
+    monkeypatch.setattr(client, "_installed_version", lambda _binary: (2, 1, 200))
+
+    ready, detail = client.claude_client_status()
+
+    assert ready is False
+    assert "too old" in detail
